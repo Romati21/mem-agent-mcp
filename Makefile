@@ -66,26 +66,27 @@ reset-filters:
 	uv run python mcp_server/scripts/filters.py --reset
 
 run-agent:
-	@if [ "$$(uname -s)" = "Darwin" ]; then \
-		echo "Detected macOS (Darwin). Starting MLX server via lms..."; \
-		echo "Select MLX model precision:"; \
-		echo "  1) 4-bit ($(MLX_4BIT_MEMORY_AGENT_NAME))"; \
-		echo "  2) 8-bit ($(MLX_8BIT_MEMORY_AGENT_NAME))"; \
-		echo "  3) bf16 ($(MLX_MEMORY_AGENT_NAME))"; \
-		printf "Enter choice [1-3]: "; read choice; \
-		case $$choice in \
-			1) model=$(MLX_4BIT_MEMORY_AGENT_NAME); search_name=$(MLX_4BIT_MEMORY_AGENT_NAME);; \
-			2) model=$(MLX_8BIT_MEMORY_AGENT_NAME); search_name=$(MLX_8BIT_MEMORY_AGENT_NAME);; \
-			3) model=$(MLX_MEMORY_AGENT_NAME); search_name=$(BF16_MEMORY_AGENT_SEARCH_NAME);; \
-			*) echo "Invalid choice. Defaulting to 4-bit."; model=$(MLX_4BIT_MEMORY_AGENT_NAME); search_name=$(MLX_4BIT_MEMORY_AGENT_NAME);; \
-		esac; \
-		printf "%s\n" "$$model" > $(REPO_ROOT)/.mlx_model_name; \
-		echo "Saved model to $(REPO_ROOT)/.mlx_model_name: $$(cat $(REPO_ROOT)/.mlx_model_name)"; \
-		lms get $$search_name --mlx --always-show-all-results; \
-		lms load $$model; \
-		lms server start --port 8000; \
+	@if command -v lms > /dev/null; then \
+		echo "LM Studio detected. Starting local server..."; \
+		if lms ls | grep -q driaforall.mem-agent; then \
+			echo "Model driaforall.mem-agent found. Loading..."; \
+			lms load driaforall.mem-agent; \
+			lms server start --port 8000; \
+		else \
+			echo "Model driaforall.mem-agent not found. Please download it first:"; \
+			echo "  lms get driaforall/mem-agent"; \
+		fi; \
+	elif [ "$$(uname -s)" = "Darwin" ]; then \
+		echo "Detected macOS (Darwin). Installing LM Studio..."; \
+		chmod +x mcp_server/scripts/install_lms.sh; \
+		./mcp_server/scripts/install_lms.sh; \
+		echo "After installation, run 'make run-agent' again."; \
+	elif [ -f /etc/NIXOS ]; then \
+		echo "NixOS detected. Install LM Studio or use OpenRouter API:"; \
+		echo "  Option 1: Install LM Studio and run 'make run-agent'"; \
+		echo "  Option 2: Set OPENROUTER_API_KEY and run 'make chat-cli'"; \
 	else \
-		echo "Non-macOS detected. Starting vLLM server..."; \
+		echo "Non-macOS detected. Trying vLLM server..."; \
 		uv run vllm serve driaforall/mem-agent; \
 	fi
 

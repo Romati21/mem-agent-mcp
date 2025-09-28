@@ -44,3 +44,50 @@ mcp.json
 
 ## start_server.sh
 **/start_server.sh
+
+# Personal data and exports
+memories/
+chatgpt-export*.zip
+*.zip
+*.tar.gz
+exports/
+downloads/
+/tmp/
+
+# API keys and tokens
+.openrouter_api_key
+*_token
+*_key
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model files
+*.gguf
+*.bin
+*.safetensors
+models/
+model_cache/
+
+# Logs
+*.log
+logs/
+.logs/
+
+# OS specific  
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test and cache
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Backup files
+*.bak
+*.backup
