@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Type
 
-from memory_connectors import BaseMemoryConnector, ChatGPTHistoryConnector, NotionConnector, NuclinoConnector
+from memory_connectors import BaseMemoryConnector, ChatGPTHistoryConnector, NotionConnector, NuclinoConnector, OrgModeConnector
 from memory_connectors.chatgpt_history.embedding_connector import ChatGPTEmbeddingConnector
 from memory_connectors.github_live import GitHubLiveConnector
 from memory_connectors.google_docs_live import GoogleDocsLiveConnector
@@ -24,6 +24,7 @@ CONNECTORS: Dict[str, Type[BaseMemoryConnector]] = {
     'nuclino': NuclinoConnector,
     'github': GitHubLiveConnector,
     'google-docs': GoogleDocsLiveConnector,
+    'org-mode': OrgModeConnector,
 }
 
 # Special handling for ChatGPT dual methodologies
@@ -385,6 +386,12 @@ Examples:
         help='API token for live connectors (GitHub personal access token)'
     )
     
+    parser.add_argument(
+        '--skip-existing',
+        action='store_true',
+        help='Skip processing files that already have output files (org-mode only)'
+    )
+    
     # Include/exclude flags for GitHub
     parser.add_argument(
         '--include-issues',
@@ -594,7 +601,11 @@ Examples:
                 connector = connector_class(**connector_kwargs)
                 print(f"🤖 Using embedding model: {embedding_model}")
             else:
-                connector = connector_class(args.output)
+                # Add skip_existing parameter for org-mode connector
+                if args.connector == 'org-mode':
+                    connector = connector_class(args.output, skip_existing=args.skip_existing)
+                else:
+                    connector = connector_class(args.output)
             
         connector.connect(args.source, max_items=args.max_items)
         

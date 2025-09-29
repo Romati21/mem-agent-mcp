@@ -9,5 +9,6 @@ from .base import BaseMemoryConnector
 from .chatgpt_history import ChatGPTHistoryConnector
 from .notion import NotionConnector
 from .nuclino import NuclinoConnector
+from .org_mode import OrgModeConnector
 
-__all__ = ['BaseMemoryConnector', 'ChatGPTHistoryConnector', 'NotionConnector', 'NuclinoConnector']
+__all__ = ['BaseMemoryConnector', 'ChatGPTHistoryConnector', 'NotionConnector', 'NuclinoConnector', 'OrgModeConnector']
