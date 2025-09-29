@@ -253,6 +253,18 @@ rm memory/org-mode-pkm/.org_sync_metadata.json
 nix-env -iA nixpkgs.inotify-tools
 ```
 
+**Проблема**: "./scripts/sync-org-pkm.sh: bad interpreter: /bin/bash"
+```bash
+# В NixOS bash находится в другом месте - уже исправлено в скрипте
+# Используется #!/usr/bin/env bash вместо #!/bin/bash
+```
+
+**Проблема**: "command not found" в cron/systemd
+```bash
+# Указать полные пути в NixOS или использовать systemd.user.services
+# См. инструкции выше для правильной настройки systemd timer
+```
+
 ### Настройка интеграции
 ```bash
 make generate-mcp-json     # Генерировать конфигурацию MCP для Claude Desktop
