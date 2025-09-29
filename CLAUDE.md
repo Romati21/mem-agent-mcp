@@ -159,42 +159,82 @@ nix-env -iA nixpkgs.inotify-tools
 ./scripts/sync-org-pkm.sh --watch  # Синхронизация при каждом изменении .org файлов
 ```
 
-#### Вариант В: Периодическая синхронизация (cron)
-**Для NixOS используйте services.cron:**
+#### Вариант В: Готовый NixOS модуль (РЕКОМЕНДУЕТСЯ)
 
-Добавьте в `/etc/nixos/configuration.nix`:
-```nix
+**Используй готовый файл `romanos/hosts/thinkpad/services/org-sync.nix`:**
+
+```bash
+# 1. Добавить в твой configuration.nix
 {
-  # Включить cron сервис
-  services.cron.enable = true;
-  
-  # ИЛИ используйте systemd.user.services для пользовательской задачи
+  imports = [
+    ./hosts/thinkpad/services/org-sync.nix
+  ];
+}
+
+# 2. Применить конфигурацию
+sudo nixos-rebuild switch
+
+# 3. Активировать user timer
+systemctl --user enable org-sync.timer
+systemctl --user start org-sync.timer
+systemctl --user status org-sync.timer
+```
+
+**Возможности готового модуля:**
+- 🔄 Автозапуск каждые 30 минут
+- 📝 Подробное логирование в `/home/roman/logs/org-sync/`
+- ⏰ Timeout защита (15 минут максимум)
+- 🔒 Безопасная изоляция user service
+- 📊 Ограничение файлов (100 за раз)
+- 🧹 Автоочистка логов (7 дней)
+
+**Управление:**
+```bash
+# Проверка статуса
+systemctl --user status org-sync.timer
+systemctl --user list-timers org-sync.timer
+
+# Ручной запуск
+systemctl --user start org-sync.service
+
+# Логи
+journalctl --user -u org-sync.service -f
+tail -f /home/roman/logs/org-sync/org-sync-$(date +%Y-%m-%d).log
+
+# Остановка
+systemctl --user stop org-sync.timer
+```
+
+#### Вариант Г: Базовый systemd для экспериментов
+Если хочешь создать свой минимальный вариант:
+
+```nix
+# В configuration.nix
+{
   systemd.user.services.org-sync = {
     description = "Sync org-mode PKM to mem-agent";
+    path = with pkgs; [ bash uv pandoc jq ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "/home/roman/mem-agent-mcp/scripts/sync-org-pkm.sh";
+      ExecStart = "/home/roman/mem-agent-mcp/scripts/sync-org-pkm.sh --max-files 50";
       WorkingDirectory = "/home/roman/mem-agent-mcp";
+      Environment = [
+        "PATH=${lib.makeBinPath (with pkgs; [ bash uv pandoc jq ])}:/home/roman/.local/bin"
+        "HOME=/home/roman"
+      ];
     };
   };
   
   systemd.user.timers.org-sync = {
     description = "Sync org-mode PKM every 30 minutes";
     timerConfig = {
-      OnCalendar = "*:0/30";  # Каждые 30 минут
+      OnCalendar = "*:0/30";
       Persistent = true;
+      RandomizedDelaySec = "5min";
     };
     wantedBy = [ "timers.target" ];
   };
 }
-```
-
-После изменения `configuration.nix`:
-```bash
-sudo nixos-rebuild switch
-systemctl --user enable org-sync.timer
-systemctl --user start org-sync.timer
-systemctl --user status org-sync.timer  # Проверить статус
 ```
 
 ### Опции скрипта sync-org-pkm.sh
